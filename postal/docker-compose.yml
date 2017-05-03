@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  database:
+    image: mysql
+    container_name: postal_db
+    environment:
+      - MYSQL_ROOT_PASSWORD=toor
+      - MYSQL_DATABASE=postal
+      - MYSQL_USER=postal
+      - MYSQL_PASSWORD=postal
+  rabbitmq:
+    image: rabbitmq
+    container_name: postal_rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=rabbit
+      - RABBITMQ_DEFAULT_PASS=rabbit
