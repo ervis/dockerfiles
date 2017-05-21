@@ -1,0 +1,61 @@
+version: '3'
+
+services:
+  nginx:
+    image: nginx
+    networks:
+      - infra
+    container_name: nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - gitlab
+    restart: always
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./nginx/gitlab.conf:/etc/nginx/conf.d/gitlab.conf:ro
+      - ./nginx/jenkins.conf:/etc/nginx/conf.d/jenkins.conf:ro
+  postgresql:
+    restart: always
+    image: postgres:9.6
+    networks:
+      - infra
+    container_name: postgres
+    volumes:
+      - /srv/docker/postgresql:/var/lib/postgresql:Z
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - DB_USER=user
+      - DB_PASS=user
+      - DB_NAME="gitlab_db jenkins_db"
+  gitlab:
+    restart: always
+    image: gitlab/gitlab-ce
+    networks:
+      - infra
+    container_name: gitlab
+    depends_on:
+      - postgresql
+    environment:
+      - DB_ADAPTER=postgresql
+      - DB_HOST=postgres
+      - DB_NAME=gitlab_db
+      - DB_USER=user
+      - DB_PASS=user
+    volumes:
+      - /srv/docker/gitlab/gitlab/etc/gitlab:/etc/gitlab:Z
+      - /srv/docker/gitlab/gitlab/var/opt/gitlab:/var/opt/gitlab:Z
+      - /srv/docker/gitlab/gitlab/var/log/gitlab:/var/log/gitlab:Z
+  jenkins:
+    restart: always
+    image: jenkins:latest
+    networks:
+      - infra
+    container_name: jenkins
+    volumes:
+      - /srv/docker/jenkins:/var/jenkins_home
+      - /etc/localtime:/etc/localtime:ro
+
+networks:
+  infra:
+    driver: bridge
