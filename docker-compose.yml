@@ -10,13 +10,17 @@ services:
       - "80:80"
     depends_on:
       - gitlab
-    restart: always
+      - jenkins
+      - mattermost
+    restart: unless-stopped
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ./nginx/gitlab.conf:/etc/nginx/conf.d/gitlab.conf:ro
-      - ./nginx/jenkins.conf:/etc/nginx/conf.d/jenkins.conf:ro
+      - ./nginx/conf.d/gitlab.conf:/etc/nginx/conf.d/gitlab.conf:ro
+      - ./nginx/conf.d/jenkins.conf:/etc/nginx/conf.d/jenkins.conf:ro
+      - ./nginx/conf.d/mattermost.conf:/etc/nginx/conf.d/mattermost.conf:ro
+      - ./nginx/conf.d/redmine.conf:/etc/nginx/conf.d/redmine.conf:ro
   postgresql:
-    restart: always
+    restart: unless-stopped
     image: postgres:9.6
     networks:
       - infra
@@ -27,9 +31,9 @@ services:
     environment:
       - DB_USER=user
       - DB_PASS=user
-      - DB_NAME="gitlab_db jenkins_db"
+      - DB_NAME="gitlab_db jenkins_db mattermost_db redmine_db"
   gitlab:
-    restart: always
+    restart: unless-stopped
     image: gitlab/gitlab-ce
     networks:
       - infra
@@ -47,14 +51,37 @@ services:
       - /srv/docker/gitlab/gitlab/var/opt/gitlab:/var/opt/gitlab:Z
       - /srv/docker/gitlab/gitlab/var/log/gitlab:/var/log/gitlab:Z
   jenkins:
-    restart: always
-    image: jenkins:latest
+    restart: unless-stopped
+    image: jenkins/jenkins
     networks:
       - infra
     container_name: jenkins
     volumes:
       - /srv/docker/jenkins:/var/jenkins_home
       - /etc/localtime:/etc/localtime:ro
+  mattermost:
+      image: mattermost/mattermost-preview
+      container_name: mattermost
+      restart: unless-stopped
+      networks:
+        - infra
+      environment:
+        - MM_USERNAME=user
+        - MM_PASSWORD=user
+        - MM_DBNAME=mattermost_db
+  redmine:
+    image: redmine
+    container_name: redmine
+    restart: unless-stopped
+    networks:
+      - infra
+    environment:
+      - REDMINE_DB_POSTGRES=postgresql
+      - POSTGRES_DB=redmine_db
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=user
+    depends_on:
+      - postgresql
 
 networks:
   infra:
