@@ -4,26 +4,24 @@ services:
   nginx:
     image: nginx
     networks:
-      - infra
+      - local
     container_name: nginx
     ports:
       - "80:80"
     depends_on:
       - gitlab
       - jenkins
-      - mattermost
     restart: unless-stopped
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./nginx/conf.d/gitlab.conf:/etc/nginx/conf.d/gitlab.conf:ro
       - ./nginx/conf.d/jenkins.conf:/etc/nginx/conf.d/jenkins.conf:ro
-      - ./nginx/conf.d/mattermost.conf:/etc/nginx/conf.d/mattermost.conf:ro
-      - ./nginx/conf.d/redmine.conf:/etc/nginx/conf.d/redmine.conf:ro
+
   postgresql:
     restart: unless-stopped
     image: postgres:9.6
     networks:
-      - infra
+      - local
     container_name: postgres
     volumes:
       - /srv/docker/postgresql:/var/lib/postgresql:Z
@@ -31,12 +29,13 @@ services:
     environment:
       - DB_USER=user
       - DB_PASS=user
-      - DB_NAME="gitlab_db jenkins_db mattermost_db redmine_db"
+      - DB_NAME="gitlab_db jenkins_db"
+
   gitlab:
     restart: unless-stopped
     image: gitlab/gitlab-ce
     networks:
-      - infra
+      - local
     container_name: gitlab
     depends_on:
       - postgresql
@@ -47,42 +46,26 @@ services:
       - DB_USER=user
       - DB_PASS=user
     volumes:
-      - /srv/docker/gitlab/gitlab/etc/gitlab:/etc/gitlab:Z
-      - /srv/docker/gitlab/gitlab/var/opt/gitlab:/var/opt/gitlab:Z
-      - /srv/docker/gitlab/gitlab/var/log/gitlab:/var/log/gitlab:Z
+      - gitlab_etc:/etc/gitlab:Z
+      - gitlab_opt:/var/opt/gitlab:Z
+      - gitlab_log:/var/log/gitlab:Z
+
   jenkins:
     restart: unless-stopped
     image: jenkins/jenkins
     networks:
-      - infra
+      - local
     container_name: jenkins
     volumes:
-      - /srv/docker/jenkins:/var/jenkins_home
+      - jenkins_home:/var/jenkins_home
       - /etc/localtime:/etc/localtime:ro
-  mattermost:
-      image: mattermost/mattermost-preview
-      container_name: mattermost
-      restart: unless-stopped
-      networks:
-        - infra
-      environment:
-        - MM_USERNAME=user
-        - MM_PASSWORD=user
-        - MM_DBNAME=mattermost_db
-  redmine:
-    image: redmine
-    container_name: redmine
-    restart: unless-stopped
-    networks:
-      - infra
-    environment:
-      - REDMINE_DB_POSTGRES=postgresql
-      - POSTGRES_DB=redmine_db
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=user
-    depends_on:
-      - postgresql
+
+volumes:
+  jenkins_home:
+  gitlab_etc:
+  gitlab_opt:
+  gitlab_log:
 
 networks:
-  infra:
+  local:
     driver: bridge
