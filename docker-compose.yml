@@ -37,6 +37,7 @@ services:
     networks:
       - local
     container_name: gitlab
+    hostname: gitlab.local
     depends_on:
       - postgresql
     environment:
@@ -56,6 +57,7 @@ services:
     networks:
       - local
     container_name: jenkins
+    hostname: jenkins.local
     volumes:
       - jenkins_home:/var/jenkins_home
       - /etc/localtime:/etc/localtime:ro
