@@ -11,11 +11,23 @@ services:
     depends_on:
       - gitlab
       - jenkins
+      - artifactory
     restart: unless-stopped
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./nginx/conf.d/gitlab.conf:/etc/nginx/conf.d/gitlab.conf:ro
       - ./nginx/conf.d/jenkins.conf:/etc/nginx/conf.d/jenkins.conf:ro
+      - ./nginx/conf.d/artifactory.conf:/etc/nginx/conf.d/artifactory.conf:ro
+
+  artifactory:
+    restart: unless-stopped
+    image: docker.bintray.io/jfrog/artifactory-oss:latest
+    hostname: artifactory.local
+    container_name: artifactory
+    networks:
+      - local
+    volumes:
+      - artifactory_data:/var/opt/jfrog/artifactory
 
   postgresql:
     restart: unless-stopped
@@ -24,7 +36,7 @@ services:
       - local
     container_name: postgres
     volumes:
-      - /srv/docker/postgresql:/var/lib/postgresql:Z
+      - postgres_data:/var/lib/postgresql:Z
       - /etc/localtime:/etc/localtime:ro
     environment:
       - DB_USER=user
@@ -64,9 +76,11 @@ services:
 
 volumes:
   jenkins_home:
+  postgres_data:
   gitlab_etc:
   gitlab_opt:
   gitlab_log:
+  artifactory_data:
 
 networks:
   local:
